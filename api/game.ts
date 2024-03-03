@@ -33,10 +33,11 @@ router.get("/id/:id", (req, res) => {
 });
 
 // Test endpoint for password comparison
-router.get("/test", (req, res) => {
-    const gmail = req.query.gmail;
-    const password = req.query.password;
-
+router.post("/test", (req, res) => {
+    const gmail = req.body.gmail;
+    const password = req.body.password;
+    console.log();
+    
     const sql = 'SELECT password FROM Gameless WHERE gmail = ?';
     conn.query(sql, [gmail], (err, result) => {
         if (err) {
