@@ -94,10 +94,10 @@ router.post("/game/insert", (req, res) => {
   //request data
   conn.query(sql, (err, result) => {
     if (err) throw err;
-    res.status(200).json({ affected_row: result.affectedRows });
+    res.status(200).json({affected_row: result.affectedRows });
+    
   });
 
-  res.status(200).json(game);
 });
 
-export default router;
+
