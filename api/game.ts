@@ -32,6 +32,18 @@ router.get("/id/:id", (req, res) => {
   });
 });
 
+// Random Picture
+router.get("/picture", (req, res) => {
+  const sql = "SELECT * FROM Game_Picture ORDER BY RAND() LIMIT 2;";
+  conn.query(sql, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.json(result);
+    }
+  });
+});
+
 // Test endpoint for password comparison
 router.post("/test", (req, res) => {
   const gmail = req.body.gmail;
