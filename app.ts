@@ -6,7 +6,7 @@ import cors from "cors";
 
 export const app = express();
 
-app.use(
+app.use(  //ทุกคนสามารถเข้าถึงได้ 
     cors({
       origin: "*",
     })
