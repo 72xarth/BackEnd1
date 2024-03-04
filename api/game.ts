@@ -101,3 +101,70 @@ router.post("/game/insert", (req, res) => {
 });
 
 
+//point update
+
+
+router.put("/scoreupdate", (req, res) => {
+  const data = req.body;
+  console.log(data);
+  
+  let scoreA ;
+  let scoreB ;
+  let ra = 1 / (1 + Math.pow(10, (data.scoreB - data.scoreA) / 400));
+  let rb = 1 / (1 + Math.pow(10, (data.scoreA- data.scoreB) / 400));
+
+  
+  if (data.win == "A") {
+    scoreA = data.scoreA + 32 * (1 - ra);
+      scoreB = data.scoreB + 32 * (0 - rb);
+ 
+  } else if (data.win == "B") {
+    scoreA = data.scoreA + 32 * (0 - ra);
+    scoreB = data.scoreB + 32 * (1 - rb);
+
+      
+  }
+
+  if(scoreA <=0){
+    scoreA = 0;
+  }
+
+  if(scoreB <=0){
+    scoreB = 0;
+  }
+  
+
+  let sql1 = "update Game_Picture set score = ?  where gid = ?";
+  let sql2 = "update Game_Picture set score = ?  where gid = ?";
+  sql1 = mysql.format(sql1, [scoreA, data.gidA]);
+
+  sql2 = mysql.format(sql2, [scoreB, data.gidB]);
+
+
+  
+     
+  let query1 = new Promise((resolve, reject) => {
+    conn.query(sql1, (err, result) => {
+      if (err) reject(err);
+      resolve(result);
+    });
+  });
+
+
+  let query2 = new Promise((resolve, reject) => {
+    conn.query(sql2, (err, result) => {
+      if (err) reject(err);
+      resolve(result);
+    });
+  });
+
+  
+  Promise.all([query1, query2])
+    .then((results) => {
+      res.status(200).json(results);
+    })
+    .catch((err) => {
+      res.status(500).json({ error: err.message });
+    });
+
+});
