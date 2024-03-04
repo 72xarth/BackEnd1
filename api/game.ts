@@ -50,7 +50,7 @@ router.post("/test", (req, res) => {
   const password = req.body.password;
   console.log();
 
-  const sql = "SELECT password ,uid FROM Gameless WHERE gmail = ?";
+  const sql = "SELECT * FROM Gameless WHERE gmail = ?";
   conn.query(sql, [gmail], (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -58,7 +58,7 @@ router.post("/test", (req, res) => {
       if (result.length > 0) {
         const storedPassword = result[0].password;
         if (comparePassword(password, storedPassword)) {
-          res.json({ uid: result[0].uid});
+          res.json({ uid: result[0].uid, name: result[0].name });
         } else {
           res.status(401).json({ error: "Wrong password" });
         }
@@ -94,45 +94,36 @@ router.post("/game/insert", (req, res) => {
   //request data
   conn.query(sql, (err, result) => {
     if (err) throw err;
-    res.status(200).json({affected_row: result.affectedRows });
-    
+    res.status(200).json({ affected_row: result.affectedRows });
   });
-
 });
 
-
 //point update
-
 
 router.put("/scoreupdate", (req, res) => {
   const data = req.body;
   console.log(data);
-  
-  let scoreA ;
-  let scoreB ;
-  let ra = 1 / (1 + Math.pow(10, (data.scoreB - data.scoreA) / 400));
-  let rb = 1 / (1 + Math.pow(10, (data.scoreA- data.scoreB) / 400));
 
-  
+  let scoreA;
+  let scoreB;
+  let ra = 1 / (1 + Math.pow(10, (data.scoreB - data.scoreA) / 400));
+  let rb = 1 / (1 + Math.pow(10, (data.scoreA - data.scoreB) / 400));
+
   if (data.win == "A") {
     scoreA = data.scoreA + 32 * (1 - ra);
-      scoreB = data.scoreB + 32 * (0 - rb);
- 
+    scoreB = data.scoreB + 32 * (0 - rb);
   } else if (data.win == "B") {
     scoreA = data.scoreA + 32 * (0 - ra);
     scoreB = data.scoreB + 32 * (1 - rb);
-
-      
   }
 
-  if(scoreA <=0){
+  if (scoreA <= 0) {
     scoreA = 0;
   }
 
-  if(scoreB <=0){
+  if (scoreB <= 0) {
     scoreB = 0;
   }
-  
 
   let sql1 = "update Game_Picture set score = ?  where gid = ?";
   let sql2 = "update Game_Picture set score = ?  where gid = ?";
@@ -140,16 +131,12 @@ router.put("/scoreupdate", (req, res) => {
 
   sql2 = mysql.format(sql2, [scoreB, data.gidB]);
 
-
-  
-     
   let query1 = new Promise((resolve, reject) => {
     conn.query(sql1, (err, result) => {
       if (err) reject(err);
       resolve(result);
     });
   });
-
 
   let query2 = new Promise((resolve, reject) => {
     conn.query(sql2, (err, result) => {
@@ -158,7 +145,6 @@ router.put("/scoreupdate", (req, res) => {
     });
   });
 
-  
   Promise.all([query1, query2])
     .then((results) => {
       res.status(200).json(results);
@@ -166,5 +152,4 @@ router.put("/scoreupdate", (req, res) => {
     .catch((err) => {
       res.status(500).json({ error: err.message });
     });
-
 });
