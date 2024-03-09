@@ -3,10 +3,23 @@ import mysql from "mysql";
 import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 import { conn } from "../dbconnect";
 import { GamePostRequest } from "../model/game_post_req";
+import multer from "multer";
+import {initializeApp} from "firebase/app";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 const saltRounds = 10; // Number of salt rounds for bcrypt
 
 export const router = express.Router();
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCJV56JCebsYq_omskDpXT6MEXhuLCbRo4",
+  authDomain: "project01-69142.firebaseapp.com",
+  projectId: "project01-69142",
+  storageBucket: "project01-69142.appspot.com",
+  messagingSenderId: "985064760337",
+  appId: "1:985064760337:web:586f2b27a8d653c0c5fdb0",
+  measurementId: "G-0QE6YDDGGH"
+};
 
 // Retrieve all users
 router.get("/", (req, res) => {
@@ -78,10 +91,44 @@ const comparePassword = (password: any, hashedPassword: any) => {
   return bcrypt.compareSync(password, hashedPassword);
 };
 
-router.post("/game/insert", (req, res) => {
+
+// Initialize Firebase //Connect firebase
+initializeApp(firebaseConfig);
+// connect to Storage
+const storage = getStorage();
+//Middle
+class FileMiddleware {
+  //Attribute of class
+  filename = "";
+  //Attribute diskLoader for saving file disk
+  public readonly diskLoader = multer({
+      // diskStorage = saving file to disk
+    storage: multer.memoryStorage(),
+    limits: {
+      fileSize: 67108864, // 64 MByte
+    },
+  });
+}
+
+const fileupload = new FileMiddleware();
+router.post("/game/insert",fileupload.diskLoader.single("file"), async (req, res) => {
+  
+  res.status(200).json("Success");
   //receive data
   let game: GamePostRequest = req.body;
   console.log(req.body);
+
+  //upload
+  
+  //Upload to firebase storage
+  const filename = Math.round(Math.random() * 1000)+ ".png";
+  //Define location to be saved on storage
+  const storageRef = ref(storage, "/image/" + filename )
+  const metaData = { contentType : req.file!.mimetype};
+  //Start upload
+  const snapshot = await uploadBytesResumable(storageRef, req.file!.buffer, metaData);
+  //Get url of image from storage
+  const url = await getDownloadURL(snapshot.ref);
 
   // เรียกใช้งานฟังก์ชัน hashPassword เพื่อ hash รหัสผ่าน
   const password = game.password;
@@ -89,13 +136,15 @@ router.post("/game/insert", (req, res) => {
   console.log("Hashed password:", hashedPassword);
   //Updata to database
   let sql =
-    "INSERT INTO `Gameless`(`name`, `gmail`, `password`) VALUES (?,?,?)";
-  sql = mysql.format(sql, [game.name, game.gmail, hashedPassword]);
+    "INSERT INTO `Gameless`(`name`, `gmail`, `password`, `url`) VALUES (?,?,?,?)";
+  sql = mysql.format(sql, [game.name, game.gmail, hashedPassword ,url]);
   //request data
   conn.query(sql, (err, result) => {
     if (err) throw err;
     res.status(200).json({ affected_row: result.affectedRows });
   });
+
+  
 });
 
 //point update

@@ -14,4 +14,4 @@ app.use(  //ทุกคนสามารถเข้าถึงได้
 app.use(bodyParser.json());
 app.use("/game",game);
 app.use("/upload", upload);
-app.use("/uploads", express.static("uploads"));
+app.use("/upload", express.static("uploads"));

@@ -1,14 +1,12 @@
 // api เส้นที่ 1
 import express from "express";
 import multer from "multer";
-import path from "path";
+import {initializeApp} from "firebase/app";
+import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+import { conn } from "../dbconnect";
 
 export const router = express.Router(); //Router() คือตัวจัดการเส้นทาง
 
-// GET /upload
-router.get("/", (req,res)=>{
-    res.send("Method GET in upload.ts");
-}); //ถ้าเขาเรียกเข้ามาเป็น get ให้ทำอะไร
 
 const firebaseConfig = {
   apiKey: "AIzaSyCJV56JCebsYq_omskDpXT6MEXhuLCbRo4",
@@ -20,8 +18,7 @@ const firebaseConfig = {
   measurementId: "G-0QE6YDDGGH"
 };
 
-  import {initializeApp} from "firebase/app";
-  import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
+  
   // Initialize Firebase //Connect firebase
     initializeApp(firebaseConfig);
     // connect to Storage
@@ -55,9 +52,16 @@ const firebaseConfig = {
     //Get url of image from storage
     const url = await getDownloadURL(snapshot.ref);
 
-    res.status(200).json({
-        filename : url,
-    });
+  // Insert URL into MySQL
+  conn.query('INSERT INTO `Game_Picture`(`url`) VALUES (?)', [url], (error, results, fields) => {
+      if (error) {
+          console.error(error);
+          res.status(500).json({ error: 'Internal server error' });
+      } else {
+          res.status(200).json({ filename: url });
+      }
+  });
+
 
   });
 
