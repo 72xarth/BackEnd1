@@ -211,7 +211,7 @@ router.put("/scoreupdate", (req, res) => {
 
 
 router.get("/date", (req, res) => {
-  const sql = "SELECT * FROM state ORDER BY score LIMIT 10;";
+  const sql = "SELECT * FROM Game_Picture,state WHERE Game_Picture.gid = state.GSID ORDER BY score DESC LIMIT 10; ";
   conn.query(sql, (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
