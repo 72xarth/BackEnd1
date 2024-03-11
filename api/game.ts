@@ -220,3 +220,28 @@ router.get("/date", (req, res) => {
     }
   });
 });
+
+router.get("/image/:id", (req, res) => {
+  const id = req.params.id;
+  const sql = "SELECT * FROM Game_Picture WHERE Game_Picture.uid = ?;";
+  conn.query(sql, id, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.json(result);
+    }
+  });
+});
+
+router.delete("/image/:id", (req, res) => {
+  const id = req.params.id;
+  const sql = "delete FROM Game_Picture WHERE Game_Picture.gid = ?;";
+  conn.query(sql, id, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.json(result);
+    }
+  });
+});
+

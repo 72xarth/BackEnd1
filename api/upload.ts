@@ -41,7 +41,11 @@ const firebaseConfig = {
 // POST /upload + file
   const fileupload = new FileMiddleware();
   //fileupload.diskloader.single ส่งไฟล์และ upload ลง
-  router.post("/", fileupload.diskLoader.single("file"), async (req, res)=>{
+  router.post("/:id", fileupload.diskLoader.single("file"), async (req, res)=>{
+     let id = req.params.id;
+     console.log(id);
+     
+
     //Upload to firebase storage
     const filename = Math.round(Math.random() * 1000)+ ".png";
     //Define location to be saved on storage
@@ -53,7 +57,7 @@ const firebaseConfig = {
     const url = await getDownloadURL(snapshot.ref);
 
   // Insert URL into MySQL
-  conn.query('INSERT INTO `Game_Picture`(`url`) VALUES (?)', [url], (error, results, fields) => {
+  conn.query('INSERT INTO `Game_Picture`(`url`,`uid`) VALUES (?,?)', [url,id], (error, results, fields) => {
       if (error) {
           console.error(error);
           res.status(500).json({ error: 'Internal server error' });
