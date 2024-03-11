@@ -207,3 +207,16 @@ router.put("/scoreupdate", (req, res) => {
       res.status(500).json({ error: err.message });
     });
 });
+
+
+
+router.get("/date", (req, res) => {
+  const sql = "SELECT * FROM state ORDER BY score LIMIT 10;";
+  conn.query(sql, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.json(result);
+    }
+  });
+});
