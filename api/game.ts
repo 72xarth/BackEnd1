@@ -113,7 +113,7 @@ class FileMiddleware {
 const fileupload = new FileMiddleware();
 router.post("/game/insert",fileupload.diskLoader.single("file"), async (req, res) => {
   
-  res.status(200).json("Success");
+  
   //receive data
   let game: GamePostRequest = req.body;
   console.log(req.body);
@@ -126,7 +126,8 @@ router.post("/game/insert",fileupload.diskLoader.single("file"), async (req, res
   const storageRef = ref(storage, "/image/" + filename )
   const metaData = { contentType : req.file!.mimetype};
   //Start upload
-  const snapshot = await uploadBytesResumable(storageRef, req.file!.buffer, metaData);
+  try {
+    const snapshot = await uploadBytesResumable(storageRef, req.file!.buffer, metaData);
   //Get url of image from storage
   const url = await getDownloadURL(snapshot.ref);
 
@@ -141,9 +142,13 @@ router.post("/game/insert",fileupload.diskLoader.single("file"), async (req, res
   //request data
   conn.query(sql, (err, result) => {
     if (err) throw err;
-    res.status(200).json({ affected_row: result.affectedRows });
+    res.status(200).json({ result:"baba"});
   });
 
+  } catch (error) {
+    
+  }
+  
   
 });
 
