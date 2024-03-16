@@ -247,7 +247,14 @@ router.put("/scoreupdate",async (req, res) => {
 
 
 router.get("/date", (req, res) => {
-  const sql = "SELECT * FROM Game_Picture,state WHERE Game_Picture.gid = state.GSID ORDER BY score DESC LIMIT 10; ";
+  const sql = `
+    SELECT GSID, SUM(state.score) AS total_score, url 
+    FROM Game_Picture 
+    JOIN state ON Game_Picture.gid = state.GSID 
+    GROUP BY GSID, url 
+    ORDER BY total_score DESC 
+    LIMIT 10;
+  `;
   conn.query(sql, (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -256,6 +263,7 @@ router.get("/date", (req, res) => {
     }
   });
 });
+
 
 router.get("/image/:id", (req, res) => {
   const id = req.params.id;
@@ -278,6 +286,21 @@ router.delete("/image/:id", (req, res) => {
     } else {
       res.json(result);
     }
+  });
+});
+
+router.post("/graph/:id",async (req, res) => {
+  const id = req.params.id;
+ 
+  
+  let sql = "SELECT DISTINCT DATE_FORMAT(Date, '%Y-%m-%d') AS Date, score  FROM state  WHERE GSID = ? AND DATEDIFF(Date, CURDATE()) <= 7 ORDER BY Date ASC";
+  conn.query(sql, id, (err, result) => {
+    if (err) throw err;
+    res
+      .status(200)
+      .json(result);
+
+    
   });
 });
 
