@@ -206,7 +206,7 @@ router.put("/scoreupdate",async (req, res) => {
     sql1 = mysql.format(sql1,[scoreA,check1[0].sid]);
   }
   else{
-    sql1 = "INSERT INTO `state`(`sid`,`date`,`score`) values(?,?,?)";
+    sql1 = "INSERT INTO `state`(`GSID`,`date`,`score`) values(?,?,?)";
     sql1 = mysql.format(sql1,[data.gidA,currentDate,scoreA]);
   }
 
@@ -215,7 +215,7 @@ router.put("/scoreupdate",async (req, res) => {
     sql2 = mysql.format(sql2,[scoreB,check2[0].sid]);
   }
   else{
-    sql2 = "INSERT INTO `state`(`sid`,`date`,`score`) values(?,?,?)";
+    sql2 = "INSERT INTO `state`(`GSID`,`date`,`score`) values(?,?,?)";
     sql2 = mysql.format(sql2,[data.gidB,currentDate,scoreB]);
   }
   console.log(sql1);
@@ -225,13 +225,13 @@ router.put("/scoreupdate",async (req, res) => {
     new Promise((resolve,reject)=>{
       conn.query(sql1,(error,result)=>{
         if(error) reject(error);
-        resolve(result.affected_Row);
+        //resolve(result.affected_Row);
       });
     }),
     new Promise((resolve, reject)=>{
       conn.query(sql2,(error,result)=>{
         if(error) reject(error);
-        resolve(result.affected_Row);
+        //resolve(result.affected_Row);
       });
     })
   ])  
