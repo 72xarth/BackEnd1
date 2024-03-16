@@ -47,7 +47,9 @@ router.get("/id/:id", (req, res) => {
 
 // Random Picture
 router.get("/picture", (req, res) => {
-  const sql = "SELECT * FROM Game_Picture,state where Game_Picture.gid = state.GSID ORDER BY RAND() LIMIT 2;";
+  console.log("sss");
+  
+  const sql = "SELECT * FROM Game_Picture,state where Game_Picture.gid = state.GSID ORDER BY state.date DESC, RAND()  LIMIT 2";
   conn.query(sql, (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -155,6 +157,8 @@ router.post("/game/insert",fileupload.diskLoader.single("file"), async (req, res
 //point update
 
 router.put("/scoreupdate",async (req, res) => {
+  console.log("SDs");
+  
   const data = req.body;
   console.log(data);
 
