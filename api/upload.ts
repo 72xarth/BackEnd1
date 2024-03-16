@@ -4,6 +4,7 @@ import multer from "multer";
 import {initializeApp} from "firebase/app";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 import { conn } from "../dbconnect";
+import mysql from "mysql";
 
 export const router = express.Router(); //Router() คือตัวจัดการเส้นทาง
 
@@ -56,16 +57,27 @@ const firebaseConfig = {
     //Get url of image from storage
     const url = await getDownloadURL(snapshot.ref);
 
+    let sql = "INSERT INTO `Game_Picture`(`url`,`uid`) values(?,?)";
+    sql = mysql.format(sql,[url, id]);
+    
   // Insert URL into MySQL
-  conn.query('INSERT INTO `Game_Picture`(`url`,`uid`) VALUES (?,?)', [url,id], (error, results, fields) => {
-      if (error) {
-          console.error(error);
-          res.status(500).json({ error: 'Internal server error' });
-      } else {
-          res.status(200).json({ filename: url });
-      }
-  });
+  conn.query(sql,async (error, results, fields) => {
+      if(error) throw error;
 
+      res.status(201).json({
+        affected_row: results.affected_Row,
+        last_idx: results.insertld
+      });
+     
+    const currentDate = new Date().toISOString().slice(0,10);
+    let check2: any = await new Promise((resolve,reject)=>{
+      conn.query("INSERT INTO `state`(`GSID`,`date`,`score`) values(?,?,?)",[results.insertId,currentDate,0],(error,results)=>{
+        if(error)reject(error);
+        resolve(results);
+      });
+    });
+    });
 
+ 
   });
 

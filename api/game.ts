@@ -47,7 +47,7 @@ router.get("/id/:id", (req, res) => {
 
 // Random Picture
 router.get("/picture", (req, res) => {
-  const sql = "SELECT * FROM Game_Picture ORDER BY RAND() LIMIT 2;";
+  const sql = "SELECT * FROM Game_Picture,state where Game_Picture.gid = state.GSID ORDER BY RAND() LIMIT 2;";
   conn.query(sql, (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -154,7 +154,7 @@ router.post("/game/insert",fileupload.diskLoader.single("file"), async (req, res
 
 //point update
 
-router.put("/scoreupdate", (req, res) => {
+router.put("/scoreupdate",async (req, res) => {
   const data = req.body;
   console.log(data);
 
@@ -179,33 +179,69 @@ router.put("/scoreupdate", (req, res) => {
     scoreB = 0;
   }
 
-  let sql1 = "update Game_Picture set score = ?  where gid = ?";
-  let sql2 = "update Game_Picture set score = ?  where gid = ?";
-  sql1 = mysql.format(sql1, [scoreA, data.gidA]);
-
-  sql2 = mysql.format(sql2, [scoreB, data.gidB]);
-
-  let query1 = new Promise((resolve, reject) => {
-    conn.query(sql1, (err, result) => {
-      if (err) reject(err);
+  console.log(scoreA);
+  console.log(scoreB);
+  
+  
+  const currentDate = new Date().toISOString().slice(0,10);
+  let check1: any = await new Promise((resolve,reject)=>{
+    conn.query("SELECT sid from state where `date`=? and `GSID`=?",[currentDate,data.gidA],(error,result)=>{
+      if(error) reject(error);
       resolve(result);
     });
   });
 
-  let query2 = new Promise((resolve, reject) => {
-    conn.query(sql2, (err, result) => {
-      if (err) reject(err);
+  let check2: any = await new Promise((resolve,reject)=>{
+    conn.query("SELECT sid from state where `date`=? and `GSID`=?",[currentDate,data.gidB],(error,result)=>{
+      if(error) reject(error);
       resolve(result);
     });
   });
 
-  Promise.all([query1, query2])
-    .then((results) => {
-      res.status(200).json(results);
+  let sql1 = "";
+  let sql2 = "";
+
+  if(check1.length>0){
+    sql1 = "update state set `score`=? where `sid`=?";
+    sql1 = mysql.format(sql1,[scoreA,check1[0].sid]);
+  }
+  else{
+    sql1 = "INSERT INTO `state`(`sid`,`date`,`score`) values(?,?,?)";
+    sql1 = mysql.format(sql1,[data.gidA,currentDate,scoreA]);
+  }
+
+  if(check2.length>0){
+    sql2 = "update state set `score`=? where `sid`=?";
+    sql2 = mysql.format(sql2,[scoreB,check2[0].sid]);
+  }
+  else{
+    sql2 = "INSERT INTO `state`(`sid`,`date`,`score`) values(?,?,?)";
+    sql2 = mysql.format(sql2,[data.gidB,currentDate,scoreB]);
+  }
+  console.log(sql1);
+  console.log(sql2);
+
+  Promise.all([
+    new Promise((resolve,reject)=>{
+      conn.query(sql1,(error,result)=>{
+        if(error) reject(error);
+        resolve(result.affected_Row);
+      });
+    }),
+    new Promise((resolve, reject)=>{
+      conn.query(sql2,(error,result)=>{
+        if(error) reject(error);
+        resolve(result.affected_Row);
+      });
     })
-    .catch((err) => {
-      res.status(500).json({ error: err.message });
+  ])  
+    .then(result=>{
+      res.status(200).send(result);
+    })
+    .catch(error=>{
+      res.status(400).send(error);
     });
+  
 });
 
 
