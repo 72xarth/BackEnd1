@@ -247,14 +247,25 @@ router.put("/scoreupdate",async (req, res) => {
 
 
 router.get("/date", (req, res) => {
-  const sql = `
+  const sql = /*`
     SELECT GSID, SUM(state.score) AS total_score, url 
     FROM Game_Picture 
     JOIN state ON Game_Picture.gid = state.GSID 
     GROUP BY GSID, url 
     ORDER BY total_score DESC 
     LIMIT 10;
-  `;
+  */
+    ` SELECT GSID, score, url, @rank := @rank + 1 AS rank
+    FROM (
+        SELECT GSID, state.score AS score, url 
+        FROM Game_Picture 
+        JOIN state ON Game_Picture.gid = state.GSID 
+        WHERE state.date in(SELECT MAX(date) FROM state)
+        GROUP BY GSID, url 
+        ORDER BY score DESC 
+        LIMIT 10
+    ) AS top_scores, (SELECT @rank := 0) AS rank_init; `
+  ;
   conn.query(sql, (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -263,7 +274,33 @@ router.get("/date", (req, res) => {
     }
   });
 });
-
+router.get("/before", (req, res) => {
+  const sql = /*`
+    SELECT GSID, SUM(state.score) AS total_score, url 
+    FROM Game_Picture 
+    JOIN state ON Game_Picture.gid = state.GSID 
+    GROUP BY GSID, url 
+    ORDER BY total_score DESC 
+    LIMIT 10;
+  */
+    ` SELECT GSID, score, url, @rank := @rank + 1 AS rank
+    FROM (
+        SELECT GSID, state.score AS score, url 
+        FROM Game_Picture 
+        JOIN state ON Game_Picture.gid = state.GSID 
+        WHERE state.date in(SELECT MAX(date)-1 FROM state)
+        GROUP BY GSID, url 
+        ORDER BY score DESC 
+    ) AS top_scores, (SELECT @rank := 0) AS rank_init; `
+  ;
+  conn.query(sql, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.json(result);
+    }
+  });
+});
 
 router.get("/image/:id", (req, res) => {
   const id = req.params.id;
