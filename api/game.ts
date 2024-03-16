@@ -71,7 +71,7 @@ router.post("/test", (req, res) => {
       if (result.length > 0) {
         const storedPassword = result[0].password;
         if (comparePassword(password, storedPassword)) {
-          res.json({ uid: result[0].uid, name: result[0].name });
+          res.json({ uid: result[0].uid, name: result[0].name,url : result[0].url, gmail });
         } else {
           res.status(401).json({ error: "Wrong password" });
         }
