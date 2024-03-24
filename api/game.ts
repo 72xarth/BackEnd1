@@ -4,7 +4,7 @@ import bcrypt from "bcrypt"; // Import bcrypt for password hashing
 import { conn } from "../dbconnect";
 import { GamePostRequest } from "../model/game_post_req";
 import multer from "multer";
-import {initializeApp} from "firebase/app";
+import { initializeApp } from "firebase/app";
 import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 const saltRounds = 10; // Number of salt rounds for bcrypt
@@ -48,7 +48,7 @@ router.get("/id/:id", (req, res) => {
 // Random Picture
 router.get("/picture", (req, res) => {
   console.log("sss");
-  
+
   const sql = "SELECT * FROM Game_Picture,state where Game_Picture.gid = state.GSID ORDER BY state.date DESC, RAND()  LIMIT 2";
   conn.query(sql, (err, result) => {
     if (err) {
@@ -73,7 +73,7 @@ router.post("/test", (req, res) => {
       if (result.length > 0) {
         const storedPassword = result[0].password;
         if (comparePassword(password, storedPassword)) {
-          res.json({ uid: result[0].uid, name: result[0].name,url : result[0].url, gmail });
+          res.json({ uid: result[0].uid, name: result[0].name, url: result[0].url, gmail });
         } else {
           res.status(401).json({ error: "Wrong password" });
         }
@@ -104,7 +104,7 @@ class FileMiddleware {
   filename = "";
   //Attribute diskLoader for saving file disk
   public readonly diskLoader = multer({
-      // diskStorage = saving file to disk
+    // diskStorage = saving file to disk
     storage: multer.memoryStorage(),
     limits: {
       fileSize: 67108864, // 64 MByte
@@ -113,66 +113,80 @@ class FileMiddleware {
 }
 
 const fileupload = new FileMiddleware();
-router.post("/game/insert",fileupload.diskLoader.single("file"), async (req, res) => {
-  
-  
+router.post("/game/insert", fileupload.diskLoader.single("file"), async (req, res) => {
+
+
   //receive data
   let game: GamePostRequest = req.body;
   console.log(req.body);
 
   //upload
-  
+
   //Upload to firebase storage
-  const filename = Math.round(Math.random() * 1000)+ ".png";
+  const filename = Math.round(Math.random() * 1000) + ".png";
   //Define location to be saved on storage
-  const storageRef = ref(storage, "/image/" + filename )
-  const metaData = { contentType : req.file!.mimetype};
+  const storageRef = ref(storage, "/image/" + filename)
+  const metaData = { contentType: req.file!.mimetype };
   //Start upload
   try {
     const snapshot = await uploadBytesResumable(storageRef, req.file!.buffer, metaData);
-  //Get url of image from storage
-  const url = await getDownloadURL(snapshot.ref);
+    //Get url of image from storage
+    const url = await getDownloadURL(snapshot.ref);
 
-  // เรียกใช้งานฟังก์ชัน hashPassword เพื่อ hash รหัสผ่าน
-  const password = game.password;
-  const hashedPassword = hashPassword(password);
-  console.log("Hashed password:", hashedPassword);
-  //Updata to database
-  let sql =
-    "INSERT INTO `Gameless`(`name`, `gmail`, `password`, `url`) VALUES (?,?,?,?)";
-  sql = mysql.format(sql, [game.name, game.gmail, hashedPassword ,url]);
-  //request data
-  conn.query(sql, (err, result) => {
-    if (err) throw err;
-    res.status(200).json({ result:"baba"});
-  });
+    // เรียกใช้งานฟังก์ชัน hashPassword เพื่อ hash รหัสผ่าน
+    const password = game.password;
+    const hashedPassword = hashPassword(password);
+    console.log("Hashed password:", hashedPassword);
+    //Updata to database
+    let sql =
+      "INSERT INTO `Gameless`(`name`, `gmail`, `password`, `url`) VALUES (?,?,?,?)";
+    sql = mysql.format(sql, [game.name, game.gmail, hashedPassword, url]);
+    //request data
+    conn.query(sql, (err, result) => {
+      if (err) throw err;
+      res.status(200).json({ result: "baba" });
+    });
 
   } catch (error) {
-    
+
   }
-  
-  
+
+
 });
 
 //point update
-
-router.put("/scoreupdate",async (req, res) => {
+router.put("/scoreupdate", async (req, res) => {
   console.log("SDs");
-  
+
   const data = req.body;
   console.log(data);
 
-  let scoreA;
-  let scoreB;
+  let win: string;
+  let scoreA : any;
+  let scoreB : any;
   let ra = 1 / (1 + Math.pow(10, (data.scoreB - data.scoreA) / 400));
   let rb = 1 / (1 + Math.pow(10, (data.scoreA - data.scoreB) / 400));
 
+
+
   if (data.win == "A") {
+    win = "A";
     scoreA = data.scoreA + 32 * (1 - ra);
     scoreB = data.scoreB + 32 * (0 - rb);
+
+    var newScore1 = data.scoreA +' + 32 * '+'(1 - '+ra+')';
+    var newScore2 = data.scoreB +' + 32 * '+'(0 - '+rb+')';
+    var scoreUp1 = 32 *(1 - ra);
+    var scoreDown1 = 32 *(0 - rb);
   } else if (data.win == "B") {
+    win = "B";
     scoreA = data.scoreA + 32 * (0 - ra);
     scoreB = data.scoreB + 32 * (1 - rb);
+
+    var newScore1 = data.scoreA +' + 32 * '+'(0 - '+ra+')';
+    var newScore2 = data.scoreB +' + 32 * '+'(1 - '+rb+')';
+    var scoreUp1 = 32 *(0 - ra);
+    var scoreDown1 = 32 *(1 - rb);
   }
 
   if (scoreA <= 0) {
@@ -182,22 +196,21 @@ router.put("/scoreupdate",async (req, res) => {
   if (scoreB <= 0) {
     scoreB = 0;
   }
+  console.log(scoreA)
+  console.log(scoreB)
 
-  console.log(scoreA);
-  console.log(scoreB);
-  
-  
-  const currentDate = new Date().toISOString().slice(0,10);
-  let check1: any = await new Promise((resolve,reject)=>{
-    conn.query("SELECT sid from state where `date`=? and `GSID`=?",[currentDate,data.gidA],(error,result)=>{
-      if(error) reject(error);
+
+  const currentDate = new Date().toISOString().slice(0, 10);
+  let check1: any = await new Promise((resolve, reject) => {
+    conn.query("SELECT sid from state where `date`=? and `GSID`=?", [currentDate, data.gidA], (error, result) => {
+      if (error) reject(error);
       resolve(result);
     });
   });
 
-  let check2: any = await new Promise((resolve,reject)=>{
-    conn.query("SELECT sid from state where `date`=? and `GSID`=?",[currentDate,data.gidB],(error,result)=>{
-      if(error) reject(error);
+  let check2: any = await new Promise((resolve, reject) => {
+    conn.query("SELECT sid from state where `date`=? and `GSID`=?", [currentDate, data.gidB], (error, result) => {
+      if (error) reject(error);
       resolve(result);
     });
   });
@@ -205,48 +218,61 @@ router.put("/scoreupdate",async (req, res) => {
   let sql1 = "";
   let sql2 = "";
 
-  if(check1.length>0){
+
+  if (check1.length > 0) {
     sql1 = "update state set `score`=? where `sid`=?";
-    sql1 = mysql.format(sql1,[scoreA,check1[0].sid]);
+    sql1 = mysql.format(sql1, [scoreA, check1[0].sid]);
   }
-  else{
+  else {
     sql1 = "INSERT INTO `state`(`GSID`,`date`,`score`) values(?,?,?)";
-    sql1 = mysql.format(sql1,[data.gidA,currentDate,scoreA]);
+    sql1 = mysql.format(sql1, [data.gidA, currentDate, scoreA]);
   }
 
-  if(check2.length>0){
+  if (check2.length > 0) {
     sql2 = "update state set `score`=? where `sid`=?";
-    sql2 = mysql.format(sql2,[scoreB,check2[0].sid]);
+    sql2 = mysql.format(sql2, [scoreB, check2[0].sid]);
   }
-  else{
+  else {
     sql2 = "INSERT INTO `state`(`GSID`,`date`,`score`) values(?,?,?)";
-    sql2 = mysql.format(sql2,[data.gidB,currentDate,scoreB]);
+    sql2 = mysql.format(sql2, [data.gidB, currentDate, scoreB]);
   }
+
   console.log(sql1);
   console.log(sql2);
 
+ 
+
   Promise.all([
-    new Promise((resolve,reject)=>{
-      conn.query(sql1,(error,result)=>{
-        if(error) reject(error);
-        //resolve(result.affected_Row);
+    new Promise((resolve, reject) => {
+      conn.query(sql1, (error, result) => {
+        if (error) reject(error);
+        resolve(result);
       });
     }),
-    new Promise((resolve, reject)=>{
-      conn.query(sql2,(error,result)=>{
-        if(error) reject(error);
-        //resolve(result.affected_Row);
+    new Promise((resolve, reject) => {
+      conn.query(sql2, (error, result) => {
+        if (error) reject(error);
+        resolve(result);
       });
     })
-  ])  
-    .then(result=>{
-      res.status(200).send(result);
+  ])
+    .then(result => {
+      res.status(200).json({
+        win : win,
+        scoreA: scoreA,
+        scoreB: scoreB,
+        newScore1: newScore1,
+        newScore2: newScore2,
+        scoreUp: scoreUp1 ,
+        scoreDown: scoreDown1 ,
+      });
     })
-    .catch(error=>{
+    .catch(error => {
       res.status(400).send(error);
     });
-  
+
 });
+
 
 
 
@@ -269,7 +295,7 @@ router.get("/date", (req, res) => {
         ORDER BY score DESC 
         LIMIT 10
     ) AS top_scores, (SELECT @rank := 0) AS rank_init; `
-  ;
+    ;
   conn.query(sql, (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -296,7 +322,7 @@ router.get("/before", (req, res) => {
         GROUP BY GSID, url 
         ORDER BY score DESC 
     ) AS top_scores, (SELECT @rank := 0) AS rank_init; `
-  ;
+    ;
   conn.query(sql, (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -330,10 +356,11 @@ router.delete("/image/:id", (req, res) => {
   });
 });
 
-router.post("/graph/:id",async (req, res) => {
+router.post("/graph/:id", async (req, res) => {
   const id = req.params.id;
- 
-  
+
+  console.log(id);
+
   let sql = "SELECT DISTINCT DATE_FORMAT(Date, '%Y-%m-%d') AS Date, score  FROM state  WHERE GSID = ? AND DATEDIFF(Date, CURDATE()) <= 7 ORDER BY Date ASC";
   conn.query(sql, id, (err, result) => {
     if (err) throw err;
@@ -341,7 +368,7 @@ router.post("/graph/:id",async (req, res) => {
       .status(200)
       .json(result);
 
-    
+
   });
 });
 
