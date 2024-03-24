@@ -49,7 +49,8 @@ router.get("/id/:id", (req, res) => {
 router.get("/picture", (req, res) => {
   console.log("sss");
 
-  const sql = "SELECT * FROM Game_Picture,state where Game_Picture.gid = state.GSID ORDER BY state.date DESC, RAND()  LIMIT 2";
+  const sql = "SELECT * FROM Game_Picture JOIN state ON Game_Picture.gid = state.GSID ORDER BY RAND() LIMIT 2";
+  
   conn.query(sql, (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -58,6 +59,7 @@ router.get("/picture", (req, res) => {
     }
   });
 });
+
 
 // Test endpoint for password comparison
 router.post("/test", (req, res) => {
