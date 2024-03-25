@@ -369,8 +369,21 @@ router.post("/graph/:id", async (req, res) => {
     res
       .status(200)
       .json(result);
-
-
   });
 });
+
+router.put("/editPro", async (req, res) => {
+  const name = req.body.Nname;
+  // const password = req.body.Npassword;
+  // const image = req.body.Nimage;
+  const id = 36;
+  let sql = "UPDATE Gameless SET name = ? WHERE uid = ?";
+  conn.query(sql, [name,  id], (err, result) => {
+    if (err) throw err;
+    res.status(200).json(result);
+  });
+  
+});
+
+
 
