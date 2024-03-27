@@ -47,7 +47,7 @@ router.get("/id/:id", (req, res) => {
 
 
 
-/*// Random Picture
+// Random Picture
 router.get("/picture", (req, res) => {
   console.log("sss");
 
@@ -60,7 +60,7 @@ router.get("/picture", (req, res) => {
       res.json(result);
     }
   });
-});*/
+});
 
 router.get("/picture/:gid", (req, res) => {
   const id = req.params.gid;
@@ -145,7 +145,7 @@ router.post("/test", (req, res) => {
       if (result.length > 0) {
         const storedPassword = result[0].password;
         if (comparePassword(password, storedPassword)) {
-          res.json({ uid: result[0].uid, name: result[0].name, url: result[0].url, gmail });
+          res.json({ uid: result[0].uid, name: result[0].name, url: result[0].url, gmail,type: result[0].type });
         } else {
           res.status(401).json({ error: "Wrong password" });
         }
@@ -416,6 +416,18 @@ router.get("/image/:id", (req, res) => {
   });
 });
 
+//select admin-user
+router.get("/user", (req, res) => {
+  const sql = "SELECT * FROM Gameless where url is not NULL ";
+  conn.query(sql, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.json(result);
+    }
+  });
+});
+
 router.delete("/image/:id", (req, res) => {
   const id = req.params.id;
   const sql = "delete FROM Game_Picture WHERE Game_Picture.gid = ?;";
@@ -441,6 +453,25 @@ router.post("/graph/:id", async (req, res) => {
       .json(result);
   });
 });
+
+
+//usegame
+router.get("/usegame/:id", async (req, res) => {
+  const id = req.params.id;
+  console.log(id);
+  let sql = `SELECT  Gameless.gmail as email, Gameless.name as name, Gameless.gmail as gamail, Gameless.url as use_image, Gameless.name, Game_Picture.*
+  FROM Game_Picture
+  RIGHT OUTER JOIN Gameless ON Game_Picture.uid = Gameless.uid
+  WHERE Gameless.uid = ?
+  `;
+  conn.query(sql, [id], (err, result) => {
+    if (err) throw err;
+    res.status(200).json(result);
+  });
+});
+
+
+
 
 router.put("/editPro", async (req, res) => {
   const name = req.body.Nname;
