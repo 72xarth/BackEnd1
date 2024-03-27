@@ -23,13 +23,40 @@ const firebaseConfig = {
 
 // Retrieve all users
 router.get("/", (req, res) => {
-  conn.query("SELECT * FROM Gameless", (err, result, fields) => {
+  /*conn.query("SELECT * FROM Gameless", (err, result, fields) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
       res.json(result);
     }
+  });*/
+  let sql =
+    "DELETE FROM KeepDL WHERE TIMESTAMPDIFF(SECOND,Time , NOW()) >= 10";
+  conn.query(sql, async (err, result) => {
+    if (err) throw err;
+    try {
+      let s =
+        "SELECT Game_Picture.gid as PID,Game_Picture.url as url,state.score as point FROM Game_Picture,state WHERE Game_Picture.gid = state.GSID  and Game_Picture.gid not in(SELECT PID FROM KeepDL ) ORDER BY RAND(),state.date DESC  LIMIT 2";
+      let check2 : any = await new Promise((resolve, reject) => {
+        conn.query(s, (err, result) => {
+          if (err) reject(err);
+          resolve(result);
+        });
+      });
+
+      //console.log(s);
+      res.status(200).json({
+        gid1: check2[0].PID,
+        image1: check2[0].url,
+        score1: check2[0].point,
+
+        image2: check2[1].url,
+        score2: check2[1].point,
+        gid2: check2[1].PID,
+      });
+    } catch (error) {}
   });
+
 });
 
 // Retrieve user by ID
@@ -47,7 +74,7 @@ router.get("/id/:id", (req, res) => {
 
 
 
-/*// Random Picture
+// Random Picture
 router.get("/picture", (req, res) => {
   console.log("sss");
 
@@ -60,35 +87,6 @@ router.get("/picture", (req, res) => {
       res.json(result);
     }
   });
-});*/
-
-router.get("/picture/:gid", (req, res) => {
-  const id = req.params.gid;
-  let delayedData: any[] | null = null; // Variable to store delayed data
-  let delayFinished = false; // Variable to track if delay has finished
-
-  // Function to send delayed response
-  const delayedResponse = () => {
-    if (delayFinished && delayedData) {
-      res.json(delayedData); // Send delayed data if available and delay has finished
-    } else {
-      res.status(500).json({ error: "Data not available" }); // Send error if no delayed data or delay hasn't finished
-    }
-  };
-
-  // Delay for 10 seconds
-  setTimeout(() => {
-    const sql = "SELECT * FROM Game_Picture WHERE gid = ?"; // Query to fetch image data by ID
-    conn.query(sql, [id], (err, result) => {
-      if (err) {
-        res.status(500).json({ error: err.message });
-      } else {
-        delayedData = result; // Store data to be sent
-        delayFinished = true; // Set delayFinished to true indicating delay has finished
-        delayedResponse(); // Call response function after timeout
-      }
-    });
-  }, 10000); // 10 seconds delay
 });
 
 
@@ -238,6 +236,10 @@ router.put("/scoreupdate", async (req, res) => {
   let scoreB : any;
   let ra = 1 / (1 + Math.pow(10, (data.scoreB - data.scoreA) / 400));
   let rb = 1 / (1 + Math.pow(10, (data.scoreA - data.scoreB) / 400));
+  let gidA: any;
+  let gidB: any;
+  let scoreUp1 : any;
+  let scoreDown1 : any;
 
 
 
@@ -245,20 +247,24 @@ router.put("/scoreupdate", async (req, res) => {
     win = "A";
     scoreA = data.scoreA + 32 * (1 - ra);
     scoreB = data.scoreB + 32 * (0 - rb);
+    gidA = data.gidA;
+    gidB = data.gidB;
 
     var newScore1 = data.scoreA +' + 32 * '+'(1 - '+ra+')';
     var newScore2 = data.scoreB +' + 32 * '+'(0 - '+rb+')';
-    var scoreUp1 = 32 *(1 - ra);
-    var scoreDown1 = 32 *(0 - rb);
+     scoreUp1 = 32 *(1 - ra);
+     scoreDown1 = 32 *(0 - rb);
   } else if (data.win == "B") {
     win = "B";
     scoreA = data.scoreA + 32 * (0 - ra);
     scoreB = data.scoreB + 32 * (1 - rb);
+    gidA = data.gidA;
+    gidB = data.gidB;
 
     var newScore1 = data.scoreA +' + 32 * '+'(0 - '+ra+')';
     var newScore2 = data.scoreB +' + 32 * '+'(1 - '+rb+')';
-    var scoreUp1 = 32 *(0 - ra);
-    var scoreDown1 = 32 *(1 - rb);
+     scoreUp1 = 32 *(0 - ra);
+     scoreDown1 = 32 *(1 - rb);
   }
 
   if (scoreA <= 0) {
@@ -274,14 +280,14 @@ router.put("/scoreupdate", async (req, res) => {
 
   const currentDate = new Date().toISOString().slice(0, 10);
   let check1: any = await new Promise((resolve, reject) => {
-    conn.query("SELECT sid from state where `date`=? and `GSID`=?", [currentDate, data.gidA], (error, result) => {
+    conn.query("SELECT sid from state where `date`=? and `GSID`=?", [currentDate, data.imageA], (error, result) => {
       if (error) reject(error);
       resolve(result);
     });
   });
 
   let check2: any = await new Promise((resolve, reject) => {
-    conn.query("SELECT sid from state where `date`=? and `GSID`=?", [currentDate, data.gidB], (error, result) => {
+    conn.query("SELECT sid from state where `date`=? and `GSID`=?", [currentDate, data.imageB], (error, result) => {
       if (error) reject(error);
       resolve(result);
     });
@@ -331,12 +337,14 @@ router.put("/scoreupdate", async (req, res) => {
     .then(result => {
       res.status(200).json({
         win : win,
+        gidA : gidA,
+        gidB : gidB,
         scoreA: scoreA,
         scoreB: scoreB,
         newScore1: newScore1,
         newScore2: newScore2,
-        scoreUp: scoreUp1 ,
-        scoreDown: scoreDown1 ,
+        scoreUp1: scoreUp1 ,
+        scoreDown1: scoreDown1 ,
       });
     })
     .catch(error => {
@@ -453,60 +461,38 @@ router.put("/editPro", async (req, res) => {
     res.status(200).json(result);
   });
 
-  router.post("/delay", async (req, res) => {
-    let data = req.body;
-  
-    
-    if(data.win == 1){
-      let sql =
-      "INSERT INTO KeepDL`(pid`, time) VALUES (?,NOW())";
-    conn.query(sql, [data.PID1], (err, result) => {
-      if (err) throw err;
-      res.json(result);
-    });
-    }
-    else{
-      let sql =
-      "INSERT INTO KeepDL`(pid`, time) VALUES (?,NOW())";
-    conn.query(sql, [data.PID2], (err, result) => {
-      if (err) throw err;
-      res.json(result);
-    });
-    }
-   
-  });
+
   
 });
 
-router.get("/", async (req, res) => {
-  let sql =
-    "DELETE FROM KeepDL WHERE TIMESTAMPDIFF(SECOND,Time , NOW()) >= 10";
-  conn.query(sql, async (err, result) => {
+router.post("/delay", async (req, res) => {
+  let data = req.body;
+console.log(data);
+
+  
+  if(data.win == "A"){
+    let sql =
+    "INSERT INTO KeepDL(pid, time) VALUES (?,NOW())";
+  conn.query(sql, [data.PID1], (err, result) => {
+    
     if (err) throw err;
+    res.json(result);
+    console.log(sql);
     
-    try {
-      let s =
-        "SELECT Game_Picture.gid as PID,Game_Picture.url as url,state.score as point FROM Game_Picture,state WHERE Game_Picture.gid = state.GSID  and Game_Picture.gid not in(SELECT PID FROM KeepDL ) ORDER BY RAND(),state.date DESC  LIMIT 2";
-      let check2 : any = await new Promise((resolve, reject) => {
-        conn.query(s, (err, result) => {
-          if (err) reject(err);
-          resolve(result);
-        });
-      });
-
-      //console.log(s);
-      res.status(200).json({
-        pid1: check2[0].PID,
-        image1: check2[0].url,
-        point1: check2[0].point,
-
-        image2: check2[1].url,
-        point2: check2[1].point,
-        pid2: check2[1].PID,
-      });
-    } catch (error) {}
   });
+  }
+  else{
+    let sql =
+    "INSERT INTO KeepDL(pid, time) VALUES (?,NOW())";
+  conn.query(sql, [data.PID2], (err, result) => {
+    if (err) throw err;
+    res.json(result);
+    console.log(sql);
+    
+  });
+  }
+  
+ 
 });
-
 
 
