@@ -45,7 +45,9 @@ router.get("/id/:id", (req, res) => {
   });
 });
 
-// Random Picture
+
+
+/*// Random Picture
 router.get("/picture", (req, res) => {
   console.log("sss");
 
@@ -58,7 +60,75 @@ router.get("/picture", (req, res) => {
       res.json(result);
     }
   });
+});*/
+
+router.get("/picture/:gid", (req, res) => {
+  const id = req.params.gid;
+  let delayedData: any[] | null = null; // Variable to store delayed data
+  let delayFinished = false; // Variable to track if delay has finished
+
+  // Function to send delayed response
+  const delayedResponse = () => {
+    if (delayFinished && delayedData) {
+      res.json(delayedData); // Send delayed data if available and delay has finished
+    } else {
+      res.status(500).json({ error: "Data not available" }); // Send error if no delayed data or delay hasn't finished
+    }
+  };
+
+  // Delay for 10 seconds
+  setTimeout(() => {
+    const sql = "SELECT * FROM Game_Picture WHERE gid = ?"; // Query to fetch image data by ID
+    conn.query(sql, [id], (err, result) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else {
+        delayedData = result; // Store data to be sent
+        delayFinished = true; // Set delayFinished to true indicating delay has finished
+        delayedResponse(); // Call response function after timeout
+      }
+    });
+  }, 10000); // 10 seconds delay
 });
+
+
+// Random Picture and Delay Show Picture
+/*router.get("/picture", (req, res) => {
+  console.log("sss");
+  interface PictureData {
+    // Define the structure of the data retrieved from the database
+    // Adjust these properties based on the actual structure of your data
+    id: number;
+    name: string;
+    url: string;
+    // Add more properties if necessary
+  }
+  const sql = "SELECT * FROM Game_Picture JOIN state ON Game_Picture.gid = state.GSID ORDER BY RAND() LIMIT 2";
+
+
+  let delayedData: PictureData[] | null = null; // Variable to store delayed data
+
+  const delayedResponse = () => {
+    if (delayedData) {
+      res.json(delayedData); // Send delayed data if available
+    } else {
+      res.status(500).json({ error: "Data not available" }); // Send error if no delayed data
+    }
+  };
+
+  setTimeout(() => {
+    const sql = "SELECT * FROM Game_Picture JOIN state ON Game_Picture.gid = state.GSID ORDER BY RAND() LIMIT 2";
+
+    conn.query(sql, (err, result) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else {
+        delayedData = result; // Store data to be sent
+        delayedResponse(); // Call response function after timeout
+      }
+    });
+  }, 60000); // Delay for 10 seconds
+}); */
 
 
 // Test endpoint for password comparison
