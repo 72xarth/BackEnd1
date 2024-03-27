@@ -89,6 +89,35 @@ router.get("/picture", (req, res) => {
   });
 });
 
+router.get("/picture/:gid", (req, res) => {
+  const id = req.params.gid;
+  let delayedData: any[] | null = null; // Variable to store delayed data
+  let delayFinished = false; // Variable to track if delay has finished
+
+  // Function to send delayed response
+  const delayedResponse = () => {
+    if (delayFinished && delayedData) {
+      res.json(delayedData); // Send delayed data if available and delay has finished
+    } else {
+      res.status(500).json({ error: "Data not available" }); // Send error if no delayed data or delay hasn't finished
+    }
+  };
+
+  // Delay for 10 seconds
+  setTimeout(() => {
+    const sql = "SELECT * FROM Game_Picture WHERE gid = ?"; // Query to fetch image data by ID
+    conn.query(sql, [id], (err, result) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+      } else {
+        delayedData = result; // Store data to be sent
+        delayFinished = true; // Set delayFinished to true indicating delay has finished
+        delayedResponse(); // Call response function after timeout
+      }
+    });
+  }, 10000); // 10 seconds delay
+});
+
 
 // Random Picture and Delay Show Picture
 /*router.get("/picture", (req, res) => {
@@ -143,7 +172,7 @@ router.post("/test", (req, res) => {
       if (result.length > 0) {
         const storedPassword = result[0].password;
         if (comparePassword(password, storedPassword)) {
-          res.json({ uid: result[0].uid, name: result[0].name, url: result[0].url, gmail });
+          res.json({ uid: result[0].uid, name: result[0].name, url: result[0].url, gmail,type: result[0].type });
         } else {
           res.status(401).json({ error: "Wrong password" });
         }
@@ -424,6 +453,18 @@ router.get("/image/:id", (req, res) => {
   });
 });
 
+//select admin-user
+router.get("/user", (req, res) => {
+  const sql = "SELECT * FROM Gameless where url is not NULL ";
+  conn.query(sql, (err, result) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+    } else {
+      res.json(result);
+    }
+  });
+});
+
 router.delete("/image/:id", (req, res) => {
   const id = req.params.id;
   const sql = "delete FROM Game_Picture WHERE Game_Picture.gid = ?;";
@@ -449,6 +490,25 @@ router.post("/graph/:id", async (req, res) => {
       .json(result);
   });
 });
+
+
+//usegame
+router.get("/usegame/:id", async (req, res) => {
+  const id = req.params.id;
+  console.log(id);
+  let sql = `SELECT  Gameless.gmail as email, Gameless.name as name, Gameless.gmail as gamail, Gameless.url as use_image, Gameless.name, Game_Picture.*
+  FROM Game_Picture
+  RIGHT OUTER JOIN Gameless ON Game_Picture.uid = Gameless.uid
+  WHERE Gameless.uid = ?
+  `;
+  conn.query(sql, [id], (err, result) => {
+    if (err) throw err;
+    res.status(200).json(result);
+  });
+});
+
+
+
 
 router.put("/editPro", async (req, res) => {
   const name = req.body.Nname;
