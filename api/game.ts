@@ -452,7 +452,60 @@ router.put("/editPro", async (req, res) => {
     if (err) throw err;
     res.status(200).json(result);
   });
+
+  router.post("/delay", async (req, res) => {
+    let data = req.body;
   
+    
+    if(data.win == 1){
+      let sql =
+      "INSERT INTO KeepDL`(pid`, time) VALUES (?,NOW())";
+    conn.query(sql, [data.PID1], (err, result) => {
+      if (err) throw err;
+      res.json(result);
+    });
+    }
+    else{
+      let sql =
+      "INSERT INTO KeepDL`(pid`, time) VALUES (?,NOW())";
+    conn.query(sql, [data.PID2], (err, result) => {
+      if (err) throw err;
+      res.json(result);
+    });
+    }
+   
+  });
+  
+});
+
+router.get("/", async (req, res) => {
+  let sql =
+    "DELETE FROM KeepDL WHERE TIMESTAMPDIFF(SECOND,Time , NOW()) >= 10";
+  conn.query(sql, async (err, result) => {
+    if (err) throw err;
+    
+    try {
+      let s =
+        "SELECT Game_Picture.gid as PID,Game_Picture.url as url,state.score as point FROM Game_Picture,state WHERE Game_Picture.gid = state.GSID  and Game_Picture.gid not in(SELECT PID FROM KeepDL ) ORDER BY RAND(),state.date DESC  LIMIT 2";
+      let check2 : any = await new Promise((resolve, reject) => {
+        conn.query(s, (err, result) => {
+          if (err) reject(err);
+          resolve(result);
+        });
+      });
+
+      //console.log(s);
+      res.status(200).json({
+        pid1: check2[0].PID,
+        image1: check2[0].url,
+        point1: check2[0].point,
+
+        image2: check2[1].url,
+        point2: check2[1].point,
+        pid2: check2[1].PID,
+      });
+    } catch (error) {}
+  });
 });
 
 
