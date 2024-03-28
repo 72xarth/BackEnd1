@@ -22,7 +22,10 @@ const firebaseConfig = {
 };
 
 // Retrieve all users
-router.get("/", (req, res) => {
+router.post("/", (req, res) => {
+  let data = req.body;
+  console.log(data);
+  
   /*conn.query("SELECT * FROM Gameless", (err, result, fields) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -31,8 +34,8 @@ router.get("/", (req, res) => {
     }
   });*/
   let sql =
-    "DELETE FROM KeepDL WHERE TIMESTAMPDIFF(SECOND,Time , NOW()) >= 10";
-  conn.query(sql, async (err, result) => {
+    "DELETE FROM KeepDL WHERE TIMESTAMPDIFF(SECOND,Time , NOW()) >= ?";
+  conn.query(sql,[data.x], async (err, result) => {
     if (err) throw err;
     try {
       let s =
