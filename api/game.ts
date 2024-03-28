@@ -39,7 +39,7 @@ router.post("/", (req, res) => {
     if (err) throw err;
     try {
       let s =
-        "SELECT Game_Picture.gid as PID,Game_Picture.url as url,state.score as point FROM Game_Picture,state WHERE Game_Picture.gid = state.GSID  and Game_Picture.gid not in(SELECT PID FROM KeepDL ) ORDER BY RAND(),state.date DESC  LIMIT 2";
+        "SELECT Gameless.uid as Uuid , Gameless.name as Uname, Gameless.url as Uurl,  Game_Picture.gid as PID,Game_Picture.url as url,state.score as point FROM Game_Picture,state,Gameless WHERE   Gameless.uid = Game_Picture.uid  and  Game_Picture.gid = state.GSID  and Game_Picture.gid not in(SELECT PID FROM KeepDL ) ORDER BY RAND(),state.date DESC  LIMIT 2";
       let check2 : any = await new Promise((resolve, reject) => {
         conn.query(s, (err, result) => {
           if (err) reject(err);
@@ -49,10 +49,16 @@ router.post("/", (req, res) => {
 
       //console.log(s);
       res.status(200).json({
+        Uuid1: check2[0].Uuid,
+        Uurl1: check2[0].Uurl,
+        Uname1: check2[0].Uname,
         gid1: check2[0].PID,
         image1: check2[0].url,
         score1: check2[0].point,
 
+        Uuid2: check2[0].Uuid,
+        Uurl2: check2[0].Uurl,
+        Uname2: check2[0].Uname,
         image2: check2[1].url,
         score2: check2[1].point,
         gid2: check2[1].PID,
