@@ -45,6 +45,7 @@ const firebaseConfig = {
   router.post("/:id", fileupload.diskLoader.single("file"), async (req, res)=>{
      let id = req.params.id;
      console.log(id);
+     console.log("SSSSS");
      
 
     //Upload to firebase storage
