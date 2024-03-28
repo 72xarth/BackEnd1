@@ -24,7 +24,7 @@ const firebaseConfig = {
 // Retrieve all users
 router.post("/", (req, res) => {
   let data = req.body;
-
+  console.log(data.x1);
   
   /*conn.query("SELECT * FROM Gameless", (err, result, fields) => {
     if (err) {
