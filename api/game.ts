@@ -455,7 +455,7 @@ router.get("/image/:id", (req, res) => {
 
 //select admin-user
 router.get("/user", (req, res) => {
-  const sql = "SELECT * FROM Gameless where url is not NULL ";
+  const sql = "SELECT * FROM Gameless where type = 0 ";
   conn.query(sql, (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
@@ -510,20 +510,18 @@ router.get("/usegame/:id", async (req, res) => {
 
 
 
-router.put("/editPro", async (req, res) => {
-  const name = req.body.Nname;
-  // const password = req.body.Npassword;
-  // const image = req.body.Nimage;
-  const id = 36;
+router.put("/editPro/:id", async (req, res) => {
+  const name = req.body.name;
+  const id = req.params.id;
+  console.log(name);
+  
   let sql = "UPDATE Gameless SET name = ? WHERE uid = ?";
-  conn.query(sql, [name,  id], (err, result) => {
+  conn.query(sql, [name,id], (err, result) => {
     if (err) throw err;
     res.status(200).json(result);
   });
-
-
-  
 });
+
 
 router.post("/delay", async (req, res) => {
   let data = req.body;
