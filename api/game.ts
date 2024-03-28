@@ -222,7 +222,7 @@ class FileMiddleware {
 
 const fileupload = new FileMiddleware();
 router.post("/game/insert", fileupload.diskLoader.single("file"), async (req, res) => {
-  
+
 
   //receive data
   let game: GamePostRequest = req.body;
@@ -240,8 +240,7 @@ router.post("/game/insert", fileupload.diskLoader.single("file"), async (req, re
     const snapshot = await uploadBytesResumable(storageRef, req.file!.buffer, metaData);
     //Get url of image from storage
     const url = await getDownloadURL(snapshot.ref);
-    
-    
+
     // เรียกใช้งานฟังก์ชัน hashPassword เพื่อ hash รหัสผ่าน
     const password = game.password;
     const hashedPassword = hashPassword(password);
@@ -453,10 +452,8 @@ router.get("/before", (req, res) => {
 
 router.get("/image/:id", (req, res) => {
   const id = req.params.id;
-  console.log(id);
-  
-  const sql = "SELECT Game_Picture.* FROM Game_Picture,Gameless WHERE Game_Picture.uid = Gameless.uid and Game_Picture.uid = ?";
-  conn.query(sql ,id, (err, result) => {
+  const sql = "SELECT * FROM Game_Picture WHERE Game_Picture.uid = ?;";
+  conn.query(sql, id, (err, result) => {
     if (err) {
       res.status(500).json({ error: err.message });
     } else {
@@ -507,9 +504,10 @@ router.post("/graph/:id", async (req, res) => {
 //usegame
 router.get("/usegame/:id", async (req, res) => {
   const id = req.params.id;
+  
   console.log(id);
-  let sql = `SELECT sum(score.state) as score , Gameless.gmail as email, Gameless.name as name, Gameless.gmail as gamail, Gameless.url as use_image, Gameless.name, Game_Picture.*
-  FROM Game_Picture,state
+  let sql = `SELECT Gameless.gmail as email, Gameless.name as name, Gameless.gmail as gamail, Gameless.url as use_image, Gameless.name, Game_Picture.*
+  FROM Game_Picture
   RIGHT OUTER JOIN Gameless ON Game_Picture.uid = Gameless.uid
   WHERE Gameless.uid = ?
   `;
@@ -545,36 +543,6 @@ router.put("/editPro/:id", async (req, res) => {
   });
 });
 
-router.put("/updateImage/:id", fileupload.diskLoader.single("file"), async (req, res) => {
-  try {
-    const id = req.params.id;
-    console.log(id);
-    
-    
-    const file = req.file;
-    if (!file) {
-      return res.status(400).json({ error: "No file provided" });
-    }
-    //Upload to Firebase Storage
-    const filename = Math.round(Math.random() * 1000) + ".png";
-    const storageRef = ref(storage, "/image/" + filename);
-    const metaData = { contentType: file.mimetype };
-    const snapshot = await uploadBytesResumable(storageRef, file.buffer, metaData);
-    const url = await getDownloadURL(snapshot.ref);
-    //Update URL in MySQL database
-    let sql = "UPDATE Game_Picture SET url = ? WHERE gid = ?";
-    conn.query(sql, [url, id], (err, result) => {
-      if (err) {
-        return res.status(500).json({ error: "Failed to update image URL in database" });
-      }
-      res.status(200).json({ message: "Image URL updated successfully" });
-    });
-  } catch (error) {
-    console.error("Error updating image:", error);
-    res.status(500).json({ error: "An error occurred while updating image" });
-  }
-});
-
 
 router.post("/delay", async (req, res) => {
   let data = req.body;
@@ -606,43 +574,4 @@ console.log(data);
  
 });
 
-  router.post("/:id", fileupload.diskLoader.single("file"), async (req, res)=>{
-     let id = req.params.id;
-     console.log(id);
-     console.log("SSSSSSSSSSSSSSSSSSSSSS");
-     
-
-    //Upload to firebase storage
-    const filename = Math.round(Math.random() * 1000)+ ".png";
-    //Define location to be saved on storage
-    const storageRef = ref(storage, "/image/" + filename )
-    const metaData = { contentType : req.file!.mimetype};
-    //Start upload
-    const snapshot = await uploadBytesResumable(storageRef, req.file!.buffer, metaData);
-    //Get url of image from storage
-    const url = await getDownloadURL(snapshot.ref);
-
-    let sql = "INSERT INTO `Game_Picture`(`url`,`uid`) values(?,?)";
-    sql = mysql.format(sql,[url, id]);
-    
-  // Insert URL into MySQL
-  conn.query(sql,async (error, results, fields) => {
-      if(error) throw error;
-
-      res.status(201).json({
-        affected_row: results.affected_Row,
-        last_idx: results.insertld
-      });
-     
-    const currentDate = new Date().toISOString().slice(0,10);
-    let check2: any = await new Promise((resolve,reject)=>{
-      conn.query("INSERT INTO `state`(`GSID`,`date`,`score`) values(?,?,?)",[results.insertId,currentDate,0],(error,results)=>{
-        if(error)reject(error);
-        resolve(results);
-      });
-    });
-    });
-
- 
-  });
 
