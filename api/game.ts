@@ -505,8 +505,8 @@ router.post("/graph/:id", async (req, res) => {
 router.get("/usegame/:id", async (req, res) => {
   const id = req.params.id;
   console.log(id);
-  let sql = `SELECT  Gameless.gmail as email, Gameless.name as name, Gameless.gmail as gamail, Gameless.url as use_image, Gameless.name, Game_Picture.*
-  FROM Game_Picture
+  let sql = `SELECT sum(score.state) as score , Gameless.gmail as email, Gameless.name as name, Gameless.gmail as gamail, Gameless.url as use_image, Gameless.name, Game_Picture.*
+  FROM Game_Picture,state
   RIGHT OUTER JOIN Gameless ON Game_Picture.uid = Gameless.uid
   WHERE Gameless.uid = ?
   `;
@@ -520,14 +520,25 @@ router.get("/usegame/:id", async (req, res) => {
 
 
 router.put("/editPro/:id", async (req, res) => {
+
   const name = req.body.name;
   const id = req.params.id;
+  console.log(id);
+  
   console.log(name);
+
+  // const filename = Math.round(Math.random() * 1000) + ".png";
+  // const storageRef = ref(storage, "/image/" + filename)
+  // const metaData = { contentType: req.file!.mimetype };
+  // const snapshot = await uploadBytesResumable(storageRef, req.file!.buffer, metaData);
+  // const url = await getDownloadURL(snapshot.ref);
   
   let sql = "UPDATE Gameless SET name = ? WHERE uid = ?";
   conn.query(sql, [name,id], (err, result) => {
     if (err) throw err;
-    res.status(200).json(result);
+    res.status(200).json({
+      apx:1
+    });
   });
 });
 
