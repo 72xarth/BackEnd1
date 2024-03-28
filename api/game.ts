@@ -24,7 +24,7 @@ const firebaseConfig = {
 // Retrieve all users
 router.post("/", (req, res) => {
   let data = req.body;
-  console.log(data);
+
   
   /*conn.query("SELECT * FROM Gameless", (err, result, fields) => {
     if (err) {
@@ -35,7 +35,7 @@ router.post("/", (req, res) => {
   });*/
   let sql =
     "DELETE FROM KeepDL WHERE TIMESTAMPDIFF(SECOND,Time , NOW()) >= ?";
-  conn.query(sql,[data.x], async (err, result) => {
+  conn.query(sql,[data.x1], async (err, result) => {
     if (err) throw err;
     try {
       let s =
